@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest a format, integration, or safety improvement.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What privacy or usability problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Content-loss or compatibility risks
+    validations:
+      required: true

@@ -1,0 +1,9 @@
+$ fileveil scan holiday.jpg
+[MEDIUM] holiday.jpg
+  - GPS location [HIGH] (The file may contain where it was captured.)
+  - camera model [MEDIUM] (Phone X)
+  - capture time [MEDIUM] (2026:10:24 19:31:05)
+
+$ fileveil clean holiday.jpg -o safe
+[CLEAN] holiday.jpg -> safe/holiday.jpg
+

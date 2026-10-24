@@ -1,0 +1,35 @@
+name: Bug report
+description: Report incorrect scanning, cleaning, or installation behavior.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Do not upload a real sensitive file. Generate a minimal synthetic test
+        file whenever possible.
+  - type: input
+    id: version
+    attributes:
+      label: FileVeil version
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and Python version
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+
