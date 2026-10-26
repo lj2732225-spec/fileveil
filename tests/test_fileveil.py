@@ -77,6 +77,20 @@ class FileVeilTests(unittest.TestCase):
             self.assertNotIn(b"Canon", output.read_bytes())
             self.assertNotIn(b"hidden", output.read_bytes())
 
+    def test_jpeg_removes_trailing_data_ending_with_eoi(self):
+        image = b"\xff\xd8\xff\xda\x00\x02\x01\x00image-data\xff\xd9"
+        payload = image + b"trailing\xff\xd9"
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "photo.jpg"
+            output = Path(folder) / "clean.jpg"
+            source.write_bytes(payload)
+
+            labels = [item.label for item in scan_file(source).findings]
+            self.assertIn("bytes after end of image", labels)
+
+            clean_file(source, output)
+            self.assertEqual(output.read_bytes(), image)
+
     def test_png_scan_and_clean(self):
         with tempfile.TemporaryDirectory() as folder:
             source = Path(folder) / "image.png"
