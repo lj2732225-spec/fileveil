@@ -8,6 +8,7 @@ from .models import Finding, ScanResult
 EXIF_PREFIX = b"Exif\x00\x00"
 XMP_PREFIX = b"http://ns.adobe.com/xap/1.0/\x00"
 PHOTOSHOP_PREFIX = b"Photoshop 3.0\x00"
+END_OF_IMAGE = b"\xff\xd9"
 
 TAGS = {
     0x010F: "camera make",
@@ -133,10 +134,19 @@ def _segments(data: bytes):
             return
 
 
+def _find_eoi(data: bytes, scan_start: int) -> Optional[int]:
+    offset = data.find(END_OF_IMAGE, scan_start)
+    return offset + len(END_OF_IMAGE) if offset >= 0 else None
+
+
 def inspect(data: bytes, path: Path) -> ScanResult:
     findings = []
+    scan_start = None
     try:
         for marker, start, end in _segments(data):
+            if marker == 0xDA:
+                scan_start = end
+                break
             raw = data[start:end]
             if marker == 0xE1:
                 payload = raw[4:]
@@ -152,8 +162,12 @@ def inspect(data: bytes, path: Path) -> ScanResult:
                 findings.append(Finding("APP12", "application metadata", "low"))
             elif marker == 0xFE:
                 findings.append(Finding("Comment", "embedded comment", "medium"))
-        eoi = data.rfind(b"\xff\xd9")
-        if eoi >= 0 and eoi + 2 < len(data):
+        if scan_start is None:
+            return ScanResult(path, "jpeg", error="Unreadable JPEG")
+        eoi_end = _find_eoi(data, scan_start)
+        if eoi_end is None:
+            return ScanResult(path, "jpeg", error="Unreadable JPEG")
+        if eoi_end < len(data):
             findings.append(
                 Finding("Trailing data", "bytes after end of image", "medium")
             )
@@ -169,14 +183,14 @@ def clean(data: bytes) -> bytes:
         if marker in (0xE1, 0xED, 0xEC, 0xFE):
             continue
         if marker == 0xDA:
-            output.extend(data[start:])
+            eoi_end = _find_eoi(data, end)
+            if eoi_end is None:
+                raise ValueError("JPEG has no end marker")
+            output.extend(data[start:eoi_end])
             eoi_found = True
             break
         output.extend(data[start:end])
     if not eoi_found:
         raise ValueError("JPEG has no image data")
-    eoi = output.rfind(b"\xff\xd9")
-    if eoi < 0:
-        raise ValueError("JPEG has no end marker")
-    return bytes(output[: eoi + 2])
+    return bytes(output)
 
